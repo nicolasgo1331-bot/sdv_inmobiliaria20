@@ -9,10 +9,10 @@ window.SDV_CONFIG = {
   /* Base de datos (Supabase). Mientras estén vacíos, la web funciona en MODO DEMOSTRACIÓN:
      lo que se carga se guarda solo en ese navegador y los clientes no lo ven.
      Ver LEEME.md para completarlos. */
-  SUPABASE_URL: '',
-  SUPABASE_ANON_KEY: '',
+  SUPABASE_URL: 'https://ilvnfynqblgecnxopbdx.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_Lhy6Q_jLfKehxuQaGTmfTg_cal6WNpG',
   BUCKET: 'propiedades',
-  ADMIN_EMAIL: '',                       // email del usuario administrador creado en Supabase
+  ADMIN_EMAIL: 'admin@sdvinmobiliaria.com',                       // email del usuario administrador creado en Supabase
 
   ADMIN_PIN: '1234'                      // solo para el modo demostración
 };
