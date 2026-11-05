@@ -569,7 +569,7 @@ legend { padding: 0; margin-bottom: 12px; font-size: 12px; font-weight: 700; let
   <form class="sheet pin-sheet" id="pinForm" novalidate>
     <div class="lockic"><i data-lucide="lock" class="i"></i></div>
     <div><h2>Acceso privado</h2><p class="hint" id="pinHint" style="margin-top:4px">Ingresá tu PIN para editar el catálogo.</p></div>
-    <div class="field" id="pinEmailWrap" hidden><label for="pinEmail" class="sr-only">Email</label><input class="inp" id="pinEmail" type="email" placeholder="Email" style="letter-spacing:0;font-size:15px"></div>
+    <div class="field" id="pinEmailWrap" hidden><label for="pinEmail" class="sr-only">Email</label><input class="inp" id="pinEmail" type="email" placeholder="Email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" style="letter-spacing:0;font-size:15px"></div>
     <div class="field"><label for="pinInp" class="sr-only">PIN</label><input class="inp" id="pinInp" type="password" inputmode="numeric" autocomplete="current-password" placeholder="••••"></div>
     <p class="err" id="pinErr" role="alert"></p>
     <div style="display:grid;gap:8px"><button class="btn btn-primary btn-block" type="submit">Ingresar</button><button class="btn btn-ghost" type="button" data-close>Cancelar</button></div>
@@ -693,9 +693,11 @@ function supabaseStore() {
 
 const USE_SB = !!(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY && window.supabase);
 const Store = USE_SB ? supabaseStore() : localStore();
+let authError = '';
+const authMsg = () => /not confirmed/i.test(authError) ? 'El usuario existe pero no está confirmado. En Supabase borralo y creálo de nuevo con Auto Confirm User.' : /invalid login/i.test(authError) ? 'Email o contraseña incorrectos.' : authError ? 'No se pudo ingresar: ' + authError : 'Email o contraseña incorrectos.';
 const Auth = USE_SB ? {
   async restore() { const { data } = await Store.sb.auth.getSession(); return !!data.session; },
-  async signIn(pass, email) { const { error } = await Store.sb.auth.signInWithPassword({ email: email || CONFIG.ADMIN_EMAIL, password: pass }); return !error; },
+  async signIn(pass, email) { const { error } = await Store.sb.auth.signInWithPassword({ email: (email || CONFIG.ADMIN_EMAIL || '').trim().toLowerCase(), password: pass }); authError = error ? (error.message || '') : ''; return !error; },
   async signOut() { await Store.sb.auth.signOut(); }
 } : {
   async restore() { return safeGet('sessionStorage', 'sdv_admin') === '1'; },
@@ -1015,17 +1017,17 @@ $('#newBtn').addEventListener('click', () => openForm(null));
 /* ---------- Acceso privado ---------- */
 function lockClick() {
   if (state.admin) { $('#adminBar').scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
-  $('#pinEmailWrap').hidden = !(USE_SB && !CONFIG.ADMIN_EMAIL);
+  $('#pinEmailWrap').hidden = !USE_SB; F('pinEmail').value = CONFIG.ADMIN_EMAIL || '';
   $('#pinHint').textContent = USE_SB ? 'Ingresá tu contraseña para editar el catálogo.' : 'Ingresá tu PIN para editar el catálogo.';
   F('pinInp').placeholder = USE_SB ? 'Contraseña' : '••••'; F('pinInp').value = ''; F('pinErr').textContent = '';
-  openOv('#pinOv'); setTimeout(() => (USE_SB && !CONFIG.ADMIN_EMAIL ? F('pinEmail') : F('pinInp')).focus(), 60);
+  openOv('#pinOv'); setTimeout(() => (USE_SB && !F('pinEmail').value ? F('pinEmail') : F('pinInp')).focus(), 60);
 }
 $('#lockBtn').addEventListener('click', lockClick);
 $('#pinForm').addEventListener('submit', async e => {
   e.preventDefault();
   let ok = false; try { ok = await Auth.signIn(F('pinInp').value, F('pinEmail').value.trim()); } catch (x) { }
   if (ok) { state.admin = true; closeOv('#pinOv'); render(); toast('Sesión iniciada'); }
-  else { F('pinErr').textContent = USE_SB ? 'Email o contraseña incorrectos.' : 'PIN incorrecto. Probá de nuevo.'; const s = $('#pinForm'); s.classList.remove('shake'); void s.offsetWidth; s.classList.add('shake'); F('pinInp').select(); }
+  else { F('pinErr').textContent = USE_SB ? authMsg() : 'PIN incorrecto. Probá de nuevo.'; const s = $('#pinForm'); s.classList.remove('shake'); void s.offsetWidth; s.classList.add('shake'); F('pinInp').select(); }
 });
 $('#logoutBtn').addEventListener('click', async () => { await Auth.signOut(); state.admin = false; render(); toast('Sesión cerrada'); });
 
