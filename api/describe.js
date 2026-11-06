@@ -49,14 +49,14 @@ async function geminiModels(key) {
   return list;
 }
 
-async function callGemini(key, model, userMsg, timeout) {
+async function callGemini(key, model, userMsg, timeout, level) {
   const r = await fetch(`${G}/models/${model}:generateContent`, {
     method: 'POST',
     headers: { 'x-goog-api-key': key, 'content-type': 'application/json' },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: SYSTEM }] },
       contents: [{ role: 'user', parts: [{ text: userMsg }] }],
-      generationConfig: { maxOutputTokens: 2048, temperature: 0.8 }
+      generationConfig: Object.assign({ maxOutputTokens: 2048, temperature: 0.8 }, level ? { thinkingConfig: { thinkingLevel: level } } : {})
     }),
     signal: AbortSignal.timeout(timeout)
   }).catch(e => ({ ok: false, status: 0, json: async () => ({ error: { message: String((e && e.message) || e) } }) }));
@@ -74,10 +74,10 @@ module.exports = async (req, res) => {
     if (req.method === 'GET' && req.query && req.query.diag === '1') {
       const k = process.env.GEMINI_API_KEY, out = { hasGemini: !!k, tries: [] };
       if (k) {
-        out.models = await geminiModels(k);
+        out.models = req.query.model ? [req.query.model] : (await geminiModels(k)).slice(0, 1);
         for (const m of out.models) {
           const t0 = Date.now();
-          const o = await callGemini(k, m, 'Datos de la propiedad (JSON):\n{"tipo":"lote","operacion":"venta","barrio":"Pueblo Nuevo","ciudad":"San Martín","superficie_total_m2":200,"servicios":["luz","agua","gas natural"]}', 12000);
+          const o = await callGemini(k, m, 'Datos de la propiedad (JSON):\n{"tipo":"lote","operacion":"venta","barrio":"Pueblo Nuevo","ciudad":"San Martín","superficie_total_m2":200,"servicios":["luz","agua","gas natural"]}', 25000, req.query.level || '');
           out.tries.push({ m, ms: Date.now() - t0, ...o });
         }
       }
