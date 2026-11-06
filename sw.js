@@ -1,5 +1,5 @@
 /* Service worker: la web siempre intenta traer la versión nueva y, sin internet, usa la última guardada. */
-const V = 'sdv-v1';
+const V = 'sdv-v2';
 const SHELL = ['/', '/index.html', '/config.js', '/manifest.webmanifest', '/icons/icon-192.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(V).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => {

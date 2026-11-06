@@ -510,7 +510,7 @@ legend { padding: 0; margin-bottom: 12px; font-size: 12px; font-weight: 700; let
       </nav>
     </div>
     <div class="foot-bot">
-      <span>© <span id="yr"></span> SDV Servicios Inmobiliarios · Corredora inmobiliaria Soledad Degiorgi Valestra · San Martín, Mendoza</span>
+      <span>© <span id="yr"></span> SDV Servicios Inmobiliarios · v2026.11.06b · Corredora inmobiliaria Soledad Degiorgi Valestra · San Martín, Mendoza</span>
       <button class="lock-btn" id="lockBtn" type="button" aria-label="Acceso privado" title="Acceso privado"><i data-lucide="lock" class="i"></i></button>
     </div>
   </div>
@@ -1148,6 +1148,7 @@ document.addEventListener('click', async e => {
   else if (isIOS) toast('En Safari tocá el botón Compartir y elegí «Agregar a inicio».', 9000);
 });
 if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => { }));
+if ('serviceWorker' in navigator) { let reloaded = false; navigator.serviceWorker.addEventListener('controllerchange', () => { if (reloaded || !navigator.serviceWorker.controller) return; reloaded = true; location.reload(); }); }
 
 /* ---------- Inicio ---------- */
 async function init() {
