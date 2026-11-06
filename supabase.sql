@@ -15,6 +15,7 @@ create table if not exists public.properties (
   total_area numeric,
   covered_area numeric,
   age numeric,
+  rooms int,
   bedrooms int,
   bathrooms int,
   garages int,
@@ -48,3 +49,6 @@ create policy "fotos subida admin" on storage.objects for insert
   with check (bucket_id = 'propiedades' and auth.role() = 'authenticated');
 create policy "fotos borrado admin" on storage.objects for delete
   using (bucket_id = 'propiedades' and auth.role() = 'authenticated');
+
+-- Si la tabla ya existía de antes, agregar la columna de ambientes:
+alter table public.properties add column if not exists rooms int;
