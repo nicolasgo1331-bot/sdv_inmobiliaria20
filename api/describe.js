@@ -25,6 +25,22 @@ const num = v => (Number.isFinite(Number(v)) && Number(v) > 0 ? Number(v) : 0);
 
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
+  if (req.method === 'GET' && req.query && req.query.diag === '1') {
+    const k = process.env.GEMINI_API_KEY, out = { node: process.version, hasGemini: !!k, keyPrefix: k ? k.slice(0, 3) : null, keyLen: k ? k.length : 0, tries: [] };
+    if (k) {
+      const body = JSON.stringify({ contents: [{ role: 'user', parts: [{ text: 'Decí hola en una palabra.' }] }], generationConfig: { maxOutputTokens: 64 } });
+      const tg = m => [['studio', `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, { 'x-goog-api-key': k }], ['vertex', `https://aiplatform.googleapis.com/v1/publishers/google/models/${m}:generateContent?key=${encodeURIComponent(k)}`, {}]];
+      for (const m of GEMINI_MODELS) for (const [name, url, hd] of tg(m)) {
+        const t0 = Date.now();
+        try {
+          const r = await fetch(url, { method: 'POST', headers: { ...hd, 'content-type': 'application/json' }, body, signal: AbortSignal.timeout(9000) });
+          const j = await r.json().catch(() => ({}));
+          out.tries.push({ m, name, status: r.status, ms: Date.now() - t0, msg: str(j.error && j.error.message, 140), ok: !!(j.candidates && j.candidates[0]) });
+        } catch (e) { out.tries.push({ m, name, error: String(e && e.message || e).slice(0, 120), ms: Date.now() - t0 }); }
+      }
+    }
+    return res.status(200).json(out);
+  }
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
 
   const geminiKey = process.env.GEMINI_API_KEY, claudeKey = process.env.ANTHROPIC_API_KEY;
@@ -71,7 +87,7 @@ module.exports = async (req, res) => {
       outer:
       for (const m of GEMINI_MODELS) {
         for (const tg of targets(m)) {
-          const r = await fetch(tg.url, { method: 'POST', headers: { ...tg.headers, 'content-type': 'application/json' }, body: bodyJson });
+          const r = await fetch(tg.url, { method: 'POST', headers: { ...tg.headers, 'content-type': 'application/json' }, body: bodyJson, signal: AbortSignal.timeout(9000) }).catch(e => ({ ok: false, status: 0, json: async () => ({ error: { message: String(e && e.message || e) } }) }));
           const j = await r.json().catch(() => ({}));
           if (r.ok) {
             text = ((j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || []).map(x => x.text || '').join('').trim();
@@ -96,6 +112,6 @@ module.exports = async (req, res) => {
     if (!text) return res.status(502).json({ error: 'ai_error', detail: lastErr });
     return res.status(200).json({ text });
   } catch (e) {
-    return res.status(502).json({ error: 'ai_unreachable' });
+    return res.status(502).json({ error: 'ai_unreachable', detail: str(e && e.message, 160) });
   }
 };
