@@ -897,7 +897,8 @@ function detailHTML(p) {
   if (p.garages) rows.push(['Cocheras', p.garages]);
   rows.push(['Estado', STATUS[p.status]]);
   const sv = p.services || {};
-  const chip = (label, on, icon) => `<span class="chip ${on ? 'yes' : 'no'}">${ic(on ? 'check' : 'minus')}${label}</span>`;
+  const chips = [['Luz', sv.electricity], ['Agua', sv.water], ['Gas natural', sv.gas], ['Cloacas', sv.sewer], ['Asfalto', sv.asphalt], ['Apto crédito', p.creditEligible], ['Apto mascotas', p.petFriendly]]
+    .filter(c => c[1]).map(c => `<span class="chip yes">${ic('check')}${c[0]}</span>`).join('');
   const loc = [p.address, p.neighborhood, p.city].filter(Boolean).join(' · ');
   return `<div class="detail">
     <div class="gal">
@@ -917,9 +918,7 @@ function detailHTML(p) {
       <div class="wa-bar"><a class="btn btn-wa btn-block" href="${waLink(p)}" target="_blank" rel="noopener">${WA_ICON}Consultar por WhatsApp</a><button class="btn btn-ghost share" type="button" data-share="${esc(p.id)}" aria-label="Copiar enlace de la propiedad" title="Copiar enlace">${ic('link')}</button></div>
       ${p.description ? `<div><h3 class="sec-t">Descripción</h3><p class="desc">${esc(p.description)}</p></div>` : ''}
       <div><h3 class="sec-t">Ficha técnica</h3><dl class="dl">${rows.map(r => `<div><dt>${r[0]}</dt><dd>${esc(r[1])}</dd></div>`).join('')}</dl></div>
-      <div><h3 class="sec-t">Servicios y detalles</h3><div class="chips">
-        ${chip('Luz', sv.electricity)}${chip('Agua', sv.water)}${chip('Gas natural', sv.gas)}${chip('Cloacas', sv.sewer)}${chip('Asfalto', sv.asphalt)}${chip('Apto crédito', p.creditEligible)}${chip('Apto mascotas', p.petFriendly)}
-      </div></div>
+      ${chips ? `<div><h3 class="sec-t">Servicios y detalles</h3><div class="chips">${chips}</div></div>` : ''}
     </div></div>`;
 }
 function openDetail(id) {
