@@ -43,6 +43,7 @@ async function geminiModels(key) {
       .map(x => ({ n: x.n, v: parseFloat(x.m[1]) }))
       .sort((a, b) => b.v - a.v);
     /* primero los "lite" (responden en ~1 s), y como último recurso el "flash" completo, que es más lento */
+    list = list.map(x => x.n);
     list = [...list.filter(x => /lite$/.test(x)).slice(0, 2), ...list.filter(x => !/lite$/.test(x)).slice(0, 1)];
   } catch (e) { /* se usan los de respaldo */ }
   if (!list.length) list = ['gemini-flash-latest'];
