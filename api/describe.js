@@ -72,19 +72,6 @@ async function callGemini(key, model, userMsg, timeout, level) {
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   try {
-    /* DIAGNÓSTICO TEMPORAL (se borra al terminar de probar) */
-    if (req.method === 'GET' && req.query && req.query.diag === '1') {
-      const k = process.env.GEMINI_API_KEY, out = { hasGemini: !!k, tries: [] };
-      if (k) {
-        out.models = req.query.model ? [req.query.model] : (await geminiModels(k)).slice(0, 1);
-        for (const m of out.models) {
-          const t0 = Date.now();
-          const o = await callGemini(k, m, 'Datos de la propiedad (JSON):\n{"tipo":"lote","operacion":"venta","barrio":"Pueblo Nuevo","ciudad":"San Martín","superficie_total_m2":200,"servicios":["luz","agua","gas natural"]}', 25000, req.query.level || '');
-          out.tries.push({ m, ms: Date.now() - t0, ...o });
-        }
-      }
-      return res.status(200).json(out);
-    }
     if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
 
     const geminiKey = process.env.GEMINI_API_KEY, claudeKey = process.env.ANTHROPIC_API_KEY;
