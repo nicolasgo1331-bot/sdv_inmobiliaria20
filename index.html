@@ -1085,7 +1085,7 @@ function localDescription(d) {
   const tipo = TYPE_LOWER[d.type] || 'propiedad', zona = d.neighborhood || d.city || 'San Martín', serv = [];
   if (d.services.electricity) serv.push('luz'); if (d.services.water) serv.push('agua'); if (d.services.gas) serv.push('gas natural'); if (d.services.sewer) serv.push('cloacas'); if (d.services.asphalt) serv.push('calle asfaltada');
   const list = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' y ' + a[a.length - 1];
-  const art = d.type === 'casa' || d.type === 'lote' ? 'Una' : 'Un';
+  const art = d.type === 'casa' ? 'Una' : 'Un';
   const p1 = [`${art} ${tipo}${d.rooms ? ' de ' + d.rooms + ' ambientes' : ''} en ${zona}${d.city && d.city !== zona ? ', ' + d.city : ''}${d.operation === 'alquiler' ? ', disponible para alquilar' : ''}.`];
   if (d.totalArea) p1.push(d.coveredArea ? `Cuenta con ${nf.format(d.totalArea)} m² de terreno, de los cuales ${nf.format(d.coveredArea)} m² están cubiertos.` : `Tiene una superficie de ${nf.format(d.totalArea)} m².`);
   if (d.age != null && d.type !== 'lote') p1.push(d.age === 0 ? 'Es a estrenar.' : `Su antigüedad es de ${d.age} ${d.age === 1 ? 'año' : 'años'}.`);
@@ -1126,7 +1126,7 @@ F('aiBtn').addEventListener('click', async () => {
       else if (r.status === 401 || r.status === 403) note = 'Tu sesión venció. Cerrá sesión y volvé a entrar para usar la IA.';
       else if (r.status === 429) note = 'La IA gratuita llegó a su límite por ahora. Usé el redactor básico; probá de nuevo en un minuto.';
       else if (r.status === 503) note = 'La IA todavía no está activada, así que usé el redactor básico.';
-      else note = 'La IA no respondió, así que usé el redactor básico. Probá de nuevo.';
+      else { let dj = {}; try { dj = await r.json(); } catch (x) { } note = 'La IA no respondió' + (dj.detail ? ' (' + dj.detail + ')' : '') + '. Usé el redactor básico.'; }
     } else note = 'Modo demostración: usé el redactor básico, sin IA.';
   } catch (e) { note = 'No se pudo conectar con la IA, así que usé el redactor básico.'; }
   if (!text) text = localDescription(d);

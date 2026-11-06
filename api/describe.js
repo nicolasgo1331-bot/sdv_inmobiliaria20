@@ -58,26 +58,30 @@ module.exports = async (req, res) => {
   try {
     let text = '', lastErr = '';
     if (geminiKey) {
+      const bodyJson = JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM }] },
+        contents: [{ role: 'user', parts: [{ text: userMsg }] }],
+        generationConfig: { maxOutputTokens: 2048, temperature: 0.8 }
+      });
+      /* Dos puertas de entrada de Google: la clásica (AI Studio) y la de claves nuevas "AQ." */
+      const targets = m => [
+        { url: `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, headers: { 'x-goog-api-key': geminiKey } },
+        { url: `https://aiplatform.googleapis.com/v1/publishers/google/models/${m}:generateContent?key=${encodeURIComponent(geminiKey)}`, headers: {} }
+      ];
+      outer:
       for (const m of GEMINI_MODELS) {
-        const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
-          method: 'POST',
-          headers: { 'x-goog-api-key': geminiKey, 'content-type': 'application/json' },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: SYSTEM }] },
-            contents: [{ role: 'user', parts: [{ text: userMsg }] }],
-            generationConfig: { maxOutputTokens: 2048, temperature: 0.8 }
-          })
-        });
-        const j = await r.json().catch(() => ({}));
-        if (r.ok) {
-          text = ((j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || []).map(x => x.text || '').join('').trim();
-          if (text) break;
-          lastErr = 'empty';
-          continue;
+        for (const tg of targets(m)) {
+          const r = await fetch(tg.url, { method: 'POST', headers: { ...tg.headers, 'content-type': 'application/json' }, body: bodyJson });
+          const j = await r.json().catch(() => ({}));
+          if (r.ok) {
+            text = ((j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || []).map(x => x.text || '').join('').trim();
+            if (text) break outer;
+            lastErr = 'respuesta vacía';
+            continue;
+          }
+          lastErr = r.status + ' ' + str(j.error && j.error.message, 160);
+          if (r.status === 429) return res.status(429).json({ error: 'rate_limited', detail: lastErr });
         }
-        lastErr = str(j.error && j.error.message, 200);
-        if (r.status === 429) return res.status(429).json({ error: 'rate_limited' });
-        if (r.status === 400 || r.status === 401 || r.status === 403) { if (/api key/i.test(lastErr)) break; }
       }
     } else {
       const r = await fetch('https://api.anthropic.com/v1/messages', {
