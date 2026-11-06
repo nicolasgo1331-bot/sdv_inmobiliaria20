@@ -19,6 +19,7 @@ Reglas:
 - Entre 90 y 150 palabras, en 2 o 3 párrafos cortos. Si hay pocos datos (por ejemplo un lote), escribí menos, sin rellenar.
 - Sin emojis, sin listas, sin títulos, sin signos de exclamación y sin frases hechas como "oportunidad única", "imperdible" o "en el corazón de".
 - Hablá de lo concreto: distribución, superficie, servicios y para quién puede ser una buena opción.
+- Hablá en tercera persona o en plural ("Ofrecemos", "Se vende"), nunca en primera persona del singular.
 - Concordá bien el género ("un lote", "un departamento", "una casa").
 Devolvé solo el texto de la descripción.`;
 
@@ -39,12 +40,12 @@ async function geminiModels(key) {
       .map(m => m.name.replace('models/', ''))
       .map(n => ({ n, m: /^gemini-(\d+(?:\.\d+)?)-flash(-lite)?$/.exec(n) }))
       .filter(x => x.m)
-      .map(x => ({ n: x.n, v: parseFloat(x.m[1]), lite: !!x.m[2] }))
-      .sort((a, b) => (b.v - a.v) || (Number(a.lite) - Number(b.lite)))
-      .map(x => x.n);
+      .map(x => ({ n: x.n, v: parseFloat(x.m[1]) }))
+      .sort((a, b) => b.v - a.v);
+    /* primero los "lite" (responden en ~1 s), y como último recurso el "flash" completo, que es más lento */
+    list = [...list.filter(x => /lite$/.test(x)).slice(0, 2), ...list.filter(x => !/lite$/.test(x)).slice(0, 1)];
   } catch (e) { /* se usan los de respaldo */ }
   if (!list.length) list = ['gemini-flash-latest'];
-  list = list.slice(0, 3);
   cache = { t: Date.now(), list };
   return list;
 }
@@ -116,7 +117,7 @@ module.exports = async (req, res) => {
     let text = '', lastErr = '';
     if (geminiKey) {
       for (const m of await geminiModels(geminiKey)) {
-        const out = await callGemini(geminiKey, m, userMsg, 12000);
+        const out = await callGemini(geminiKey, m, userMsg, /lite$/.test(m) ? 10000 : 15000);
         if (out.text) { text = out.text; break; }
         lastErr = `${m}: ${out.status} ${out.err}`;
         if (out.status === 429) return res.status(429).json({ error: 'rate_limited', detail: lastErr });

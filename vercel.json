@@ -1,6 +1,6 @@
 {
   "cleanUrls": true,
-  "functions": { "api/describe.js": { "maxDuration": 30 } },
+  "functions": { "api/describe.js": { "maxDuration": 60 } },
   "headers": [
     {
       "source": "/(.*)",
