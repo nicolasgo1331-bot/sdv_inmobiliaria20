@@ -39,6 +39,14 @@ module.exports = async (req, res) => {
         } catch (e) { out.tries.push({ m, name, error: String(e && e.message || e).slice(0, 120), ms: Date.now() - t0 }); }
       }
     }
+    if (k) {
+      try {
+        const lr = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': k }, signal: AbortSignal.timeout(9000) });
+        const lj = await lr.json().catch(() => ({}));
+        out.models = (lj.models || []).filter(m => (m.supportedGenerationMethods || []).includes('generateContent')).map(m => m.name.replace('models/', ''));
+        out.listStatus = lr.status;
+      } catch (e) { out.listError = String(e && e.message || e); }
+    }
     return res.status(200).json(out);
   }
   if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
