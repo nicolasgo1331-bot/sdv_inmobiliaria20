@@ -50,12 +50,12 @@ Se cambian en `config.js` (`WA_NUMBER`, `PHONE_LABEL`, `ADDRESS`). El número de
 ## Descripciones con IA
 Al cargar o editar una propiedad, el botón **Redactar con IA** escribe la descripción con los datos del formulario (y las notas que hayas puesto en el cuadro). Siempre se puede editar el resultado.
 
-Para activarlo:
-1. Creá una cuenta en https://console.anthropic.com, cargá un crédito chico (USD 5 alcanzan para cientos de descripciones) y en **API Keys** creá una clave.
-2. En Vercel: tu proyecto > **Settings > Environment Variables**. Nombre: `ANTHROPIC_API_KEY`. Valor: la clave. Marcá Production, Preview y Development, y guardá.
+Es gratis (usa Google Gemini, plan gratuito). Para activarlo:
+1. Entrá a https://aistudio.google.com con una cuenta de Google y tocá **Get API key > Create API key**. No pide tarjeta. Copiá la clave.
+2. En Vercel: tu proyecto > **Settings > Environment Variables**. Nombre: `GEMINI_API_KEY`. Valor: la clave. Marcá Production, Preview y Development, y guardá.
 3. En **Deployments**, en el último deploy tocá **⋯ > Redeploy**.
 
-Sin ese paso el botón igual funciona con un redactor básico, sin IA. Solo la cuenta de administrador puede usarlo.
+El plan gratuito tiene un límite de uso por minuto y por día, más que suficiente para cargar propiedades. Si se llega al límite, el botón usa un redactor básico y avisa. Sin la clave también funciona el redactor básico, sin IA. Solo la cuenta de administrador puede usarlo.
 
 ## Seguridad (hacer una vez)
 1. Volvé a ejecutar `supabase.sql` completo en el SQL Editor de Supabase. Ahora solo `admin@sdvinmobiliaria.com` puede crear, editar o borrar.

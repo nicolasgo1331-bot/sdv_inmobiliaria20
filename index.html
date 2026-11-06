@@ -1124,7 +1124,9 @@ F('aiBtn').addEventListener('click', async () => {
       const r = await fetch('/api/describe', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (tok || '') }, body: JSON.stringify(d) });
       if (r.ok) text = (await r.json()).text;
       else if (r.status === 401 || r.status === 403) note = 'Tu sesión venció. Cerrá sesión y volvé a entrar para usar la IA.';
-      else note = 'La IA todavía no está activada, así que usé el redactor básico.';
+      else if (r.status === 429) note = 'La IA gratuita llegó a su límite por ahora. Usé el redactor básico; probá de nuevo en un minuto.';
+      else if (r.status === 503) note = 'La IA todavía no está activada, así que usé el redactor básico.';
+      else note = 'La IA no respondió, así que usé el redactor básico. Probá de nuevo.';
     } else note = 'Modo demostración: usé el redactor básico, sin IA.';
   } catch (e) { note = 'No se pudo conectar con la IA, así que usé el redactor básico.'; }
   if (!text) text = localDescription(d);
