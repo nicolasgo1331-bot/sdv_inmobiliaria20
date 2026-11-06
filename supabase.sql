@@ -1,4 +1,8 @@
--- Ejecutar completo en Supabase > SQL Editor > New query > Run
+-- Ejecutar completo en Supabase > SQL Editor > New query > Run.
+-- Se puede volver a ejecutar sin problema: actualiza lo que ya existe.
+--
+-- IMPORTANTE: si tu email de administrador NO es admin@sdvinmobiliaria.com,
+-- cambialo en la función is_admin() de abajo antes de ejecutar.
 
 create table if not exists public.properties (
   id uuid primary key default gen_random_uuid(),
@@ -29,26 +33,37 @@ create table if not exists public.properties (
   created_at timestamptz not null default now()
 );
 
+-- Para bases creadas antes de agregar "Ambientes":
+alter table public.properties add column if not exists rooms int;
+
+-- Solo esta cuenta puede editar. Cualquier otra cuenta, aunque exista, queda sin permisos.
+create or replace function public.is_admin() returns boolean
+language sql stable as $$
+  select coalesce((auth.jwt() ->> 'email') = 'admin@sdvinmobiliaria.com', false)
+$$;
+
 alter table public.properties enable row level security;
 
--- Cualquiera ve las propiedades que no están pausadas; solo el administrador ve todas.
-create policy "lectura publica" on public.properties for select
-  using (status <> 'pausado' or auth.role() = 'authenticated');
+drop policy if exists "lectura publica" on public.properties;
+drop policy if exists "escritura admin" on public.properties;
 
--- Solo el administrador (usuario con sesión) puede crear, editar y borrar.
+create policy "lectura publica" on public.properties for select
+  using (status <> 'pausado' or public.is_admin());
+
 create policy "escritura admin" on public.properties for all
-  using (auth.role() = 'authenticated') with check (auth.role() = 'authenticated');
+  using (public.is_admin()) with check (public.is_admin());
 
 -- Bucket público para las fotos
 insert into storage.buckets (id, name, public) values ('propiedades', 'propiedades', true)
   on conflict (id) do nothing;
 
+drop policy if exists "fotos lectura publica" on storage.objects;
+drop policy if exists "fotos subida admin" on storage.objects;
+drop policy if exists "fotos borrado admin" on storage.objects;
+
 create policy "fotos lectura publica" on storage.objects for select
   using (bucket_id = 'propiedades');
 create policy "fotos subida admin" on storage.objects for insert
-  with check (bucket_id = 'propiedades' and auth.role() = 'authenticated');
+  with check (bucket_id = 'propiedades' and public.is_admin());
 create policy "fotos borrado admin" on storage.objects for delete
-  using (bucket_id = 'propiedades' and auth.role() = 'authenticated');
-
--- Si la tabla ya existía de antes, agregar la columna de ambientes:
-alter table public.properties add column if not exists rooms int;
+  using (bucket_id = 'propiedades' and public.is_admin());

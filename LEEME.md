@@ -46,3 +46,23 @@ Se cambian en `config.js` (`WA_NUMBER`, `PHONE_LABEL`, `ADDRESS`). El número de
 ## Antes de entregar
 - Cambiar `ADMIN_PIN` es innecesario con Supabase conectado: el candado pide email y contraseña reales.
 - Probar desde el celular: filtros, WhatsApp, cargar una propiedad con fotos, editarla, pausarla y borrarla.
+
+## Descripciones con IA
+Al cargar o editar una propiedad, el botón **Redactar con IA** escribe la descripción con los datos del formulario (y las notas que hayas puesto en el cuadro). Siempre se puede editar el resultado.
+
+Para activarlo:
+1. Creá una cuenta en https://console.anthropic.com, cargá un crédito chico (USD 5 alcanzan para cientos de descripciones) y en **API Keys** creá una clave.
+2. En Vercel: tu proyecto > **Settings > Environment Variables**. Nombre: `ANTHROPIC_API_KEY`. Valor: la clave. Marcá Production, Preview y Development, y guardá.
+3. En **Deployments**, en el último deploy tocá **⋯ > Redeploy**.
+
+Sin ese paso el botón igual funciona con un redactor básico, sin IA. Solo la cuenta de administrador puede usarlo.
+
+## Seguridad (hacer una vez)
+1. Volvé a ejecutar `supabase.sql` completo en el SQL Editor de Supabase. Ahora solo `admin@sdvinmobiliaria.com` puede crear, editar o borrar.
+2. En Supabase: **Authentication > Sign In / Providers > Email** y desactivá **Allow new users to sign up**. Así nadie más puede crearse una cuenta.
+
+## App en el celular
+- **iPhone (Safari):** abrir la web, tocar Compartir y **Agregar a inicio**.
+- **Android (Chrome):** menú ⋮ > **Instalar app**, o el botón **Instalar la app** que aparece en el menú y en el pie.
+
+Queda con el logo de SDV, se abre a pantalla completa y sin zoom.
